@@ -9,7 +9,7 @@ from flask import jsonify, render_template, request, url_for
 from mercantile import Tile
 
 from marblecutter import tiling
-from marblecutter.formats import PNG
+from marblecutter.formats.png import PNG
 from marblecutter.transformations import Image
 from marblecutter.web import app
 
