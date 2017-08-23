@@ -9,7 +9,7 @@ import awsgi
 
 sys.path.append('/var/task/.pypath')
 
-from marblecutter.web import app
+from openaerialmap.web import app
 
 # reset the Lambda logger
 root = logging.getLogger()
