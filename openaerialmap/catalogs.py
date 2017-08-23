@@ -1,9 +1,11 @@
 # coding=utf-8
 
+import unicodedata
 from itertools import chain
 
 from rasterio import warp
 
+import arrow
 import requests
 from marblecutter import get_zoom
 from marblecutter.catalogs import WGS84_CRS, Catalog
@@ -13,6 +15,7 @@ class OAMSceneCatalog(Catalog):
     def __init__(self, uri):
         scene = requests.get(uri).json()
 
+        self._bounds = scene['bounds']
         self._center = scene['center']
         self._maxzoom = scene['maxzoom']
         self._minzoom = scene['minzoom']
@@ -39,6 +42,10 @@ class OAMSceneCatalog(Catalog):
         return self._center
 
     @property
+    def headers(self):
+        return {}
+
+    @property
     def maxzoom(self):
         return self._maxzoom
 
@@ -56,6 +63,7 @@ class OINMetaCatalog(Catalog):
         oin_meta = requests.get(uri).json()
 
         self._bounds = oin_meta['bbox']
+        self._meta = oin_meta
         self._metadata_url = uri
         self._name = oin_meta['title']
         self._provider = oin_meta['provider']
@@ -63,11 +71,9 @@ class OINMetaCatalog(Catalog):
         self._source = oin_meta['uuid']
 
         approximate_zoom = get_zoom(self._resolution)
-        self._center = [
-            (self._bounds[0] + self.bounds[2]) / 2,
-            (self._bounds[1] + self.bounds[3]) / 2,
-            approximate_zoom - 3
-        ]
+        self._center = [(self._bounds[0] + self.bounds[2]) / 2,
+                        (self._bounds[1] + self.bounds[3]) / 2,
+                        approximate_zoom - 3]
         self._maxzoom = approximate_zoom + 3
         self._minzoom = approximate_zoom - 10
 
@@ -75,13 +81,10 @@ class OINMetaCatalog(Catalog):
         ((left, right), (bottom, top)) = warp.transform(
             bounds_crs, WGS84_CRS, bounds[::2], bounds[1::2])
 
-        if (
-            self._bounds[0] <= left <= self._bounds[2] or
-            self._bounds[0] <= right <= self._bounds[2]
-        ) and (
-            self._bounds[1] <= bottom <= self._bounds[3] or
-            self._bounds[1] <= top <= self._bounds[3]
-        ):
+        if (self._bounds[0] <= left <= self._bounds[2]
+                or self._bounds[0] <= right <= self._bounds[2]) and (
+                    self._bounds[1] <= bottom <= self._bounds[3]
+                    or self._bounds[1] <= top <= self._bounds[3]):
             return [(self._source, self._name, self._resolution)]
 
         return []
@@ -93,6 +96,53 @@ class OINMetaCatalog(Catalog):
     @property
     def center(self):
         return self._center
+
+    @property
+    def headers(self):
+        headers = {
+            'X-OIN-Metadata-URL': self._metadata_url,
+        }
+
+        if ('acquisition_start' in self._meta
+                or 'acquisition_end' in self._meta):
+            start = self._meta.get('acquisition_start')
+            end = self._meta.get('acquisition_end')
+
+            if start and end:
+                start = arrow.get(start)
+                end = arrow.get(end)
+
+                capture_range = '{}-{}'.format(
+                    start.format('M/D/YYYY'), end.format('M/D/YYYY'))
+                headers['X-OIN-Acquisition-Start'] = start.format(
+                    'YYYY-MM-DDTHH:mm:ssZZ')
+                headers['X-OIN-Acquisition-End'] = end.format(
+                    'YYYY-MM-DDTHH:mm:ssZZ')
+            elif start:
+                start = arrow.get(start)
+
+                capture_range = start.format('M/D/YYYY')
+                headers['X-OIN-Acquisition-Start'] = start.format(
+                    'YYYY-MM-DDTHH:mm:ssZZ')
+            elif end:
+                end = arrow.get(end)
+
+                capture_range = end.format('M/D/YYYY')
+                headers['X-OIN-Acquisition-End'] = end.format(
+                    'YYYY-MM-DDTHH:mm:ssZZ')
+
+            # Bing Maps-compatibility (JOSM uses this)
+            headers['X-VE-TILEMETA-CaptureDatesRange'] = capture_range
+
+        if 'provider' in self._meta:
+            headers['X-OIN-Provider'] = unicodedata.normalize(
+                'NFKD', self._meta['provider']).encode('ascii', 'ignore')
+
+        if 'platform' in self._meta:
+            headers['X-OIN-Platform'] = unicodedata.normalize(
+                'NFKD', self._meta['platform']).encode('ascii', 'ignore')
+
+        return headers
 
     @property
     def id(self):

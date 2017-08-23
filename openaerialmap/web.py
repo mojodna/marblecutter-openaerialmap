@@ -99,10 +99,9 @@ def wmts(id, scene_idx, image_id=None, **kwargs):
             minzoom=catalog.minzoom,
             provider=provider,
             provider_url=provider_url,
-            title=catalog.name,
-            ), 200, {
-            'Content-Type': 'application/xml'
-        }
+            title=catalog.name), 200, {
+                'Content-Type': 'application/xml'
+            }
 
 
 @app.route('/<prefix>/<id>/<int:scene_idx>/preview')
@@ -130,9 +129,11 @@ def preview(id, scene_idx, image_id=None, **kwargs):
 
 @app.route('/<prefix>/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
 @app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
-@app.route('/<prefix>/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
+@app.route(
+    '/<prefix>/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
 @app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
-@app.route('/<prefix>/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
+@app.route(
+    '/<prefix>/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
 @app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
 @app.route(
     '/<prefix>/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
@@ -140,14 +141,18 @@ def preview(id, scene_idx, image_id=None, **kwargs):
 @app.route(
     '/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
 )
-def render_png(id, scene_idx, z, x, y, image_id=None, scale=1, **kwargs):  # noqa
+def render_png(id, scene_idx, z, x, y, image_id=None, scale=1,
+               **kwargs):
+    catalog = make_catalog(id, scene_idx, image_id)
     tile = Tile(x, y, z)
 
     headers, data = tiling.render_tile(
         tile,
-        make_catalog(id, scene_idx, image_id),
+        catalog,
         format=PNG_FORMAT,
         transformation=IMAGE_TRANSFORMATION,
         scale=scale)
+
+    headers.update(catalog.headers)
 
     return data, 200, headers
