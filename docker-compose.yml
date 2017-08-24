@@ -2,6 +2,8 @@ version: '2'
 services:
   marblecutter:
     build: .
+    environment:
+      - PYTHONPATH=.
     env_file: .env
     volumes:
       - .:/opt/marblecutter/
