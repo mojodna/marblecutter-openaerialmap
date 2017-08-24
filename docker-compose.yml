@@ -1,6 +1,6 @@
 version: '2'
 services:
-  web:
+  marblecutter:
     build: .
     env_file: .env
     volumes:

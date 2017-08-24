@@ -30,6 +30,7 @@
 .pypath/PIL/_util.pyc
 .pypath/_posixsubprocess.so
 .pypath/affine/__init__.pyc
+.pypath/arrow/*
 .pypath/attr/__init__.pyc
 .pypath/attr/_compat.pyc
 .pypath/attr/_config.pyc
