@@ -54,10 +54,10 @@ def prefix():
         return request.headers.get("X-Stage")
 
 
-@app.route('/<prefix>/<id>/<int:scene_idx>/')
 @app.route('/<id>/<int:scene_idx>/')
-@app.route('/<prefix>/<id>/<int:scene_idx>/<image_id>/')
 @app.route('/<id>/<int:scene_idx>/<image_id>/')
+@app.route('/<prefix>/<id>/<int:scene_idx>/')
+@app.route('/<prefix>/<id>/<int:scene_idx>/<image_id>/')
 def meta(id, scene_idx, image_id=None, **kwargs):
     catalog = make_catalog(id, scene_idx, image_id)
 
@@ -86,10 +86,10 @@ def meta(id, scene_idx, image_id=None, **kwargs):
     return jsonify(meta)
 
 
-@app.route('/<prefix>/<id>/<int:scene_idx>/wmts')
 @app.route('/<id>/<int:scene_idx>/wmts')
-@app.route('/<prefix>/<id>/<int:scene_idx>/<image_id>/wmts')
 @app.route('/<id>/<int:scene_idx>/<image_id>/wmts')
+@app.route('/<prefix>/<id>/<int:scene_idx>/wmts')
+@app.route('/<prefix>/<id>/<int:scene_idx>/<image_id>/wmts')
 def wmts(id, scene_idx, image_id=None, **kwargs):
     catalog = make_catalog(id, scene_idx, image_id)
 
@@ -125,10 +125,10 @@ def wmts(id, scene_idx, image_id=None, **kwargs):
             }
 
 
-@app.route('/<prefix>/<id>/<int:scene_idx>/preview')
 @app.route('/<id>/<int:scene_idx>/preview')
-@app.route('/<prefix>/<id>/<int:scene_idx>/<image_id>/preview')
 @app.route('/<id>/<int:scene_idx>/<image_id>/preview')
+@app.route('/<prefix>/<id>/<int:scene_idx>/preview')
+@app.route('/<prefix>/<id>/<int:scene_idx>/<image_id>/preview')
 def preview(id, scene_idx, image_id=None, **kwargs):
     # load the catalog so it will fail if the source doesn't exist
     make_catalog(id, scene_idx, image_id)
@@ -148,19 +148,19 @@ def preview(id, scene_idx, image_id=None, **kwargs):
                 }
 
 
-@app.route('/<prefix>/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
 @app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
-@app.route(
-    '/<prefix>/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
 @app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
-@app.route(
-    '/<prefix>/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
 @app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
 @app.route(
-    '/<prefix>/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
+    '/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
 )
 @app.route(
-    '/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
+    '/<prefix>/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
+@app.route('/<prefix>/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
+@app.route(
+    '/<prefix>/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
+@app.route(
+    '/<prefix>/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
 )
 def render_png(id, scene_idx, z, x, y, image_id=None, scale=1, **kwargs):
     catalog = make_catalog(id, scene_idx, image_id)
