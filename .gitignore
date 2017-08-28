@@ -10,3 +10,4 @@ marblecutter.egg-info/
 *.tif
 staging.env
 production.env
+out.zip
