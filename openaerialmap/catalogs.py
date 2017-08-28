@@ -3,11 +3,11 @@
 import unicodedata
 from itertools import chain
 
-from rasterio import warp
-
 import arrow
 import requests
-from marblecutter import get_zoom
+from rasterio import warp
+
+from marblecutter import NoDataAvailable, get_zoom
 from marblecutter.catalogs import WGS84_CRS, Catalog
 
 
@@ -60,15 +60,19 @@ class OAMSceneCatalog(Catalog):
 
 class OINMetaCatalog(Catalog):
     def __init__(self, uri):
-        oin_meta = requests.get(uri).json()
+        rsp = requests.get(uri)
 
+        if not rsp.ok:
+            raise NoDataAvailable()
+
+        oin_meta = rsp.json()
         self._bounds = oin_meta['bbox']
         self._meta = oin_meta
         self._metadata_url = uri
-        self._name = oin_meta['title']
-        self._provider = oin_meta['provider']
-        self._resolution = oin_meta['gsd']
-        self._source = oin_meta['uuid']
+        self._name = oin_meta.get('title')
+        self._provider = oin_meta.get('provider')
+        self._resolution = oin_meta.get('gsd')
+        self._source = oin_meta.get('uuid')
 
         approximate_zoom = get_zoom(self._resolution)
         self._center = [(self._bounds[0] + self.bounds[2]) / 2,
