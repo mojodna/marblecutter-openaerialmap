@@ -45,6 +45,15 @@ def make_catalog(scene_id, scene_idx, image_id=None):
                            format(S3_BUCKET, S3_PREFIX, scene_id, scene_idx))
 
 
+def prefix():
+    host = request.headers.get("X-Forwarded-Host",
+                               request.headers.get("Host", ""))
+
+    # sniff for API Gateway
+    if ".execute-api." in host and ".amazonaws.com" in host:
+        return request.headers.get("X-Stage")
+
+
 @app.route('/<prefix>/<id>/<int:scene_idx>/')
 @app.route('/<id>/<int:scene_idx>/')
 @app.route('/<prefix>/<id>/<int:scene_idx>/<image_id>/')
@@ -69,7 +78,7 @@ def meta(id, scene_idx, image_id=None, **kwargs):
                     id=id,
                     scene_idx=scene_idx,
                     image_id=image_id,
-                    prefix=request.headers.get("X-Stage"),
+                    prefix=prefix(),
                     _external=True,
                     _scheme=""))
         ]
@@ -96,7 +105,7 @@ def wmts(id, scene_idx, image_id=None, **kwargs):
             id=id,
             scene_idx=scene_idx,
             image_id=image_id,
-            prefix=request.headers.get("X-Stage"),
+            prefix=prefix(),
             _external=True)
 
         return render_template(
@@ -132,7 +141,7 @@ def preview(id, scene_idx, image_id=None, **kwargs):
                 id=id,
                 scene_idx=scene_idx,
                 image_id=image_id,
-                prefix=request.headers.get("X-Stage"),
+                prefix=prefix(),
                 _external=True,
                 _scheme="")), 200, {
                     "Content-Type": "text/html"
