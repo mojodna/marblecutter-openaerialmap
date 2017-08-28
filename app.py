@@ -51,4 +51,4 @@ class HostMiddleware:
 app.wsgi_app = HostMiddleware(TimeoutMiddleware(app.wsgi_app, 14000))
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 8000)), debug=True)
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
