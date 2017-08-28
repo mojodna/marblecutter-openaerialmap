@@ -8,3 +8,5 @@ up.json
 marblecutter.egg-info/
 *.pyc
 *.tif
+staging.env
+production.env
