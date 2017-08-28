@@ -21,16 +21,28 @@ IMAGE_TRANSFORMATION = Image()
 PNG_FORMAT = PNG()
 
 S3_BUCKET = os.getenv("S3_BUCKET")
+S3_PREFIX = os.getenv("S3_PREFIX", "")
+
+# normalize prefix
+if S3_PREFIX == "/":
+    S3_PREFIX = ""
+
+if not S3_PREFIX.endswith("/"):
+    S3_PREFIX += "/"
+
+if S3_PREFIX.startswith("/"):
+    S3_PREFIX = S3_PREFIX[1:]
 
 
 @lru_cache()
 def make_catalog(scene_id, scene_idx, image_id=None):
     if image_id:
-        return OINMetaCatalog("https://{}.s3.amazonaws.com/{}/{}/{}_meta.json".
-                              format(S3_BUCKET, scene_id, scene_idx, image_id))
+        return OINMetaCatalog(
+            "https://{}.s3.amazonaws.com/{}{}/{}/{}_meta.json".format(
+                S3_BUCKET, S3_PREFIX, scene_id, scene_idx, image_id))
 
-    return OAMSceneCatalog("https://{}.s3.amazonaws.com/{}/{}/scene.json".
-                           format(S3_BUCKET, scene_id, scene_idx))
+    return OAMSceneCatalog("https://{}.s3.amazonaws.com/{}{}/{}/scene.json".
+                           format(S3_BUCKET, S3_PREFIX, scene_id, scene_idx))
 
 
 @app.route('/<prefix>/<id>/<int:scene_idx>/')
@@ -141,8 +153,7 @@ def preview(id, scene_idx, image_id=None, **kwargs):
 @app.route(
     '/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
 )
-def render_png(id, scene_idx, z, x, y, image_id=None, scale=1,
-               **kwargs):
+def render_png(id, scene_idx, z, x, y, image_id=None, scale=1, **kwargs):
     catalog = make_catalog(id, scene_idx, image_id)
     tile = Tile(x, y, z)
 
