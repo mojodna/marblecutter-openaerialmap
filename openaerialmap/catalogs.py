@@ -7,7 +7,7 @@ import arrow
 import requests
 from rasterio import warp
 
-from marblecutter import NoDataAvailable, get_zoom
+from marblecutter import NoDataAvailable, get_source, get_zoom
 from marblecutter.catalogs import WGS84_CRS, Catalog
 
 
@@ -66,13 +66,16 @@ class OINMetaCatalog(Catalog):
             raise NoDataAvailable()
 
         oin_meta = rsp.json()
-        self._bounds = oin_meta['bbox']
         self._meta = oin_meta
         self._metadata_url = uri
         self._name = oin_meta.get('title')
         self._provider = oin_meta.get('provider')
         self._resolution = oin_meta.get('gsd')
         self._source = oin_meta.get('uuid')
+
+        with get_source(self._source) as source:
+            self._bounds = warp.transform_bounds(source.crs, WGS84_CRS,
+                                                 *source.bounds)
 
         approximate_zoom = get_zoom(self._resolution)
         self._center = [(self._bounds[0] + self.bounds[2]) / 2,
