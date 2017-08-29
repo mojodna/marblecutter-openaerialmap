@@ -45,7 +45,7 @@ def make_catalog(scene_id, scene_idx, image_id=None):
                            format(S3_BUCKET, S3_PREFIX, scene_id, scene_idx))
 
 
-def prefix():
+def make_prefix():
     host = request.headers.get("X-Forwarded-Host",
                                request.headers.get("Host", ""))
 
@@ -54,11 +54,16 @@ def prefix():
         return request.headers.get("X-Stage")
 
 
-@app.route('/<id>/<int:scene_idx>/')
-@app.route('/<id>/<int:scene_idx>/<image_id>/')
-@app.route('/<prefix>/<id>/<int:scene_idx>/')
-@app.route('/<prefix>/<id>/<int:scene_idx>/<image_id>/')
-def meta(id, scene_idx, image_id=None, **kwargs):
+@app.route('/<path:id>/<int:scene_idx>/')
+@app.route('/<path:id>/<int:scene_idx>/<image_id>/')
+@app.route('/<prefix>/<path:id>/<int:scene_idx>/')
+@app.route('/<prefix>/<path:id>/<int:scene_idx>/<image_id>/')
+def meta(id, scene_idx, image_id=None, prefix=None):
+    # prefix is for URL generation only (API Gateway stages); if it matched the
+    # URL, it's part of the id
+    if prefix is not None:
+        id = "/".join([prefix, id])
+
     catalog = make_catalog(id, scene_idx, image_id)
 
     meta = {
@@ -78,7 +83,7 @@ def meta(id, scene_idx, image_id=None, **kwargs):
                     id=id,
                     scene_idx=scene_idx,
                     image_id=image_id,
-                    prefix=prefix(),
+                    prefix=make_prefix(),
                     _external=True,
                     _scheme=""))
         ]
@@ -86,11 +91,16 @@ def meta(id, scene_idx, image_id=None, **kwargs):
     return jsonify(meta)
 
 
-@app.route('/<id>/<int:scene_idx>/wmts')
-@app.route('/<id>/<int:scene_idx>/<image_id>/wmts')
-@app.route('/<prefix>/<id>/<int:scene_idx>/wmts')
-@app.route('/<prefix>/<id>/<int:scene_idx>/<image_id>/wmts')
-def wmts(id, scene_idx, image_id=None, **kwargs):
+@app.route('/<path:id>/<int:scene_idx>/wmts')
+@app.route('/<path:id>/<int:scene_idx>/<image_id>/wmts')
+@app.route('/<prefix>/<path:id>/<int:scene_idx>/wmts')
+@app.route('/<prefix>/<path:id>/<int:scene_idx>/<image_id>/wmts')
+def wmts(id, scene_idx, image_id=None, prefix=None):
+    # prefix is for URL generation only (API Gateway stages); if it matched the
+    # URL, it's part of the id
+    if prefix is not None:
+        id = "/".join([prefix, id])
+
     catalog = make_catalog(id, scene_idx, image_id)
 
     provider = "OpenAerialMap"
@@ -105,7 +115,7 @@ def wmts(id, scene_idx, image_id=None, **kwargs):
             id=id,
             scene_idx=scene_idx,
             image_id=image_id,
-            prefix=prefix(),
+            prefix=make_prefix(),
             _external=True)
 
         return render_template(
@@ -125,11 +135,16 @@ def wmts(id, scene_idx, image_id=None, **kwargs):
             }
 
 
-@app.route('/<id>/<int:scene_idx>/preview')
-@app.route('/<id>/<int:scene_idx>/<image_id>/preview')
-@app.route('/<prefix>/<id>/<int:scene_idx>/preview')
-@app.route('/<prefix>/<id>/<int:scene_idx>/<image_id>/preview')
-def preview(id, scene_idx, image_id=None, **kwargs):
+@app.route('/<path:id>/<int:scene_idx>/preview')
+@app.route('/<path:id>/<int:scene_idx>/<image_id>/preview')
+@app.route('/<prefix>/<path:id>/<int:scene_idx>/preview')
+@app.route('/<prefix>/<path:id>/<int:scene_idx>/<image_id>/preview')
+def preview(id, scene_idx, image_id=None, prefix=None):
+    # prefix is for URL generation only (API Gateway stages); if it matched the
+    # URL, it's part of the id
+    if prefix is not None:
+        id = "/".join([prefix, id])
+
     # load the catalog so it will fail if the source doesn't exist
     make_catalog(id, scene_idx, image_id)
 
@@ -141,28 +156,33 @@ def preview(id, scene_idx, image_id=None, **kwargs):
                 id=id,
                 scene_idx=scene_idx,
                 image_id=image_id,
-                prefix=prefix(),
+                prefix=make_prefix(),
                 _external=True,
                 _scheme="")), 200, {
                     "Content-Type": "text/html"
                 }
 
 
-@app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
-@app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
-@app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
+@app.route('/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
+@app.route('/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
+@app.route('/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
 @app.route(
-    '/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
+    '/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
 )
 @app.route(
-    '/<prefix>/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
-@app.route('/<prefix>/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
+    '/<prefix>/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
+@app.route('/<prefix>/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
 @app.route(
-    '/<prefix>/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
+    '/<prefix>/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
 @app.route(
-    '/<prefix>/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
+    '/<prefix>/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
 )
-def render_png(id, scene_idx, z, x, y, image_id=None, scale=1, **kwargs):
+def render_png(id, scene_idx, z, x, y, image_id=None, scale=1, prefix=None):
+    # prefix is for URL generation only (API Gateway stages); if it matched the
+    # URL, it's part of the id
+    if prefix is not None:
+        id = "/".join([prefix, id])
+
     catalog = make_catalog(id, scene_idx, image_id)
     tile = Tile(x, y, z)
 
