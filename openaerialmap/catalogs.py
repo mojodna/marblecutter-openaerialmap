@@ -85,8 +85,8 @@ class OINMetaCatalog(Catalog):
         self._minzoom = approximate_zoom - 10
 
     def get_sources(self, (bounds, bounds_crs), resolution):
-        ((left, right), (bottom, top)) = warp.transform(
-            bounds_crs, WGS84_CRS, bounds[::2], bounds[1::2])
+        left, bottom, right, top = warp.transform_bounds(
+            bounds_crs, WGS84_CRS, *bounds)
 
         if (self._bounds[0] <= left <= self._bounds[2]
                 or self._bounds[0] <= right <= self._bounds[2]) and (
