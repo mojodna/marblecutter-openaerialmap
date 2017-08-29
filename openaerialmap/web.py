@@ -164,16 +164,19 @@ def preview(id, scene_idx, image_id=None, prefix=None):
 
 
 @app.route('/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
-@app.route('/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
+@app.route(
+    '/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
 @app.route('/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
 @app.route(
     '/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
 )
 @app.route(
-    '/<prefix>/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
+    '/<prefix>/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png'
+)
 @app.route('/<prefix>/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
 @app.route(
-    '/<prefix>/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
+    '/<prefix>/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
+)
 @app.route(
     '/<prefix>/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
 )
