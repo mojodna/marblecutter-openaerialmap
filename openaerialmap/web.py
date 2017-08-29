@@ -21,6 +21,7 @@ IMAGE_TRANSFORMATION = Image()
 PNG_FORMAT = PNG()
 
 S3_BUCKET = os.getenv("S3_BUCKET")
+S3_ENDPOINT = os.getenv("AWS_S3_ENDPOINT", "s3.amazonaws.com")
 S3_PREFIX = os.getenv("S3_PREFIX", "")
 
 # normalize prefix
@@ -37,12 +38,11 @@ if S3_PREFIX.startswith("/"):
 @lru_cache()
 def make_catalog(scene_id, scene_idx, image_id=None):
     if image_id:
-        return OINMetaCatalog(
-            "https://{}.s3.amazonaws.com/{}{}/{}/{}_meta.json".format(
-                S3_BUCKET, S3_PREFIX, scene_id, scene_idx, image_id))
+        return OINMetaCatalog("https://{}/{}/{}{}/{}/{}_meta.json".format(
+            S3_ENDPOINT, S3_BUCKET, S3_PREFIX, scene_id, scene_idx, image_id))
 
-    return OAMSceneCatalog("https://{}.s3.amazonaws.com/{}{}/{}/scene.json".
-                           format(S3_BUCKET, S3_PREFIX, scene_id, scene_idx))
+    return OAMSceneCatalog("https://{}/{}{}/{}/{}/scene.json".format(
+        S3_ENDPOINT, S3_BUCKET, S3_PREFIX, scene_id, scene_idx))
 
 
 def make_prefix():
