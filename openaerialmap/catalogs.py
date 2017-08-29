@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import math
 import unicodedata
 from itertools import chain
 
@@ -7,7 +8,8 @@ import arrow
 import requests
 from rasterio import warp
 
-from marblecutter import NoDataAvailable, get_source, get_zoom
+from marblecutter import (NoDataAvailable, get_resolution_in_meters,
+                          get_source, get_zoom)
 from marblecutter.catalogs import WGS84_CRS, Catalog
 
 
@@ -70,14 +72,15 @@ class OINMetaCatalog(Catalog):
         self._metadata_url = uri
         self._name = oin_meta.get('title')
         self._provider = oin_meta.get('provider')
-        self._resolution = oin_meta.get('gsd')
         self._source = oin_meta.get('uuid')
 
-        with get_source(self._source) as source:
-            self._bounds = warp.transform_bounds(source.crs, WGS84_CRS,
-                                                 *source.bounds)
+        with get_source(self._source) as src:
+            self._bounds = warp.transform_bounds(src.crs, WGS84_CRS,
+                                                 *src.bounds)
+            self._resolution = get_resolution_in_meters(
+                (src.bounds, src.crs), (src.height, src.width))
+            approximate_zoom = get_zoom(max(self._resolution), op=math.ceil)
 
-        approximate_zoom = get_zoom(self._resolution)
         self._center = [(self._bounds[0] + self.bounds[2]) / 2,
                         (self._bounds[1] + self.bounds[3]) / 2,
                         approximate_zoom - 3]
