@@ -38,4 +38,4 @@ RUN pip install -U pip numpy && \
 
 USER nobody
 
-ENTRYPOINT ["gunicorn", "-k", "gevent", "-b", "0.0.0.0", "--access-logfile", "-", "tilezen.web:app"]
+ENTRYPOINT ["gunicorn", "-k", "gevent", "-b", "0.0.0.0", "--access-logfile", "-", "openaerialmap.web:app"]
