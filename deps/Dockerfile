@@ -22,6 +22,7 @@ RUN mkdir /tmp/nghttp2 \
   && make -j $(nproc) install
 
 # Fetch and install libcurl
+
 RUN mkdir /tmp/curl \
   && curl -sfL https://curl.haxx.se/download/curl-7.56.0.tar.gz | tar zxf - -C /tmp/curl --strip-components=1 \
   && cd /tmp/curl \
