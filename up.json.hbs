@@ -2,8 +2,7 @@
   "name": "marblecutter-{{ ENV }}",
   "description": "Dynamic processing of open aerial imagery",
   "lambda": {
-    "memory": 1536,
-    "timeout": 15
+    "memory": 1536
   },
   "regions": ["us-east-1"],
   "hooks": {
@@ -14,7 +13,8 @@
     "command": "python -S app.py",
     "backoff": {
       "attempts": 1
-    }
+    },
+    "timeout": 15
   },
   "environment": {
     "S3_BUCKET": "{{ S3_BUCKET }}",
