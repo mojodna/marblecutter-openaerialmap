@@ -4,13 +4,13 @@ import math
 import unicodedata
 from itertools import chain
 
-import arrow
 import requests
-from rasterio import warp
 
-from marblecutter import (NoDataAvailable, get_resolution_in_meters,
+import arrow
+from marblecutter import (Bounds, NoDataAvailable, get_resolution_in_meters,
                           get_source, get_zoom)
 from marblecutter.catalogs import WGS84_CRS, Catalog
+from rasterio import warp
 
 
 class OAMSceneCatalog(Catalog):
@@ -78,7 +78,7 @@ class OINMetaCatalog(Catalog):
             self._bounds = warp.transform_bounds(src.crs, WGS84_CRS,
                                                  *src.bounds)
             self._resolution = get_resolution_in_meters(
-                (src.bounds, src.crs), (src.height, src.width))
+                Bounds(src.bounds, src.crs), (src.height, src.width))
             approximate_zoom = get_zoom(max(self._resolution), op=math.ceil)
 
         self._center = [(self._bounds[0] + self.bounds[2]) / 2,
@@ -87,7 +87,8 @@ class OINMetaCatalog(Catalog):
         self._maxzoom = approximate_zoom + 3
         self._minzoom = approximate_zoom - 10
 
-    def get_sources(self, (bounds, bounds_crs), resolution):
+    def get_sources(self, bounds, resolution):
+        bounds, bounds_crs = bounds
         left, bottom, right, top = warp.transform_bounds(
             bounds_crs, WGS84_CRS, *bounds)
 
