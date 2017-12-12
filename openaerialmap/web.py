@@ -6,12 +6,11 @@ import os
 
 from cachetools.func import lru_cache
 from flask import jsonify, render_template, request, url_for
-from mercantile import Tile
-
-from marblecutter import tiling
+from marblecutter import NoDataAvailable, tiling
 from marblecutter.formats.png import PNG
 from marblecutter.transformations import Image
 from marblecutter.web import app
+from mercantile import Tile
 
 from .catalogs import OAMSceneCatalog, OINMetaCatalog
 
@@ -37,12 +36,16 @@ if S3_PREFIX.startswith("/"):
 
 @lru_cache()
 def make_catalog(scene_id, scene_idx, image_id=None):
-    if image_id:
-        return OINMetaCatalog("https://{}/{}/{}{}/{}/{}_meta.json".format(
-            S3_ENDPOINT, S3_BUCKET, S3_PREFIX, scene_id, scene_idx, image_id))
+    try:
+        if image_id:
+            return OINMetaCatalog("https://{}/{}/{}{}/{}/{}_meta.json".format(
+                S3_ENDPOINT, S3_BUCKET, S3_PREFIX, scene_id, scene_idx,
+                image_id))
 
-    return OAMSceneCatalog("https://{}/{}{}/{}/{}/scene.json".format(
-        S3_ENDPOINT, S3_BUCKET, S3_PREFIX, scene_id, scene_idx))
+        return OAMSceneCatalog("https://{}/{}{}/{}/{}/scene.json".format(
+            S3_ENDPOINT, S3_BUCKET, S3_PREFIX, scene_id, scene_idx))
+    except Exception:
+        raise NoDataAvailable()
 
 
 def make_prefix():
