@@ -41,30 +41,6 @@ class OAMSceneCatalog(Catalog):
             for s in self._sources
         ])
 
-    @property
-    def bounds(self):
-        return self._bounds
-
-    @property
-    def center(self):
-        return self._center
-
-    @property
-    def headers(self):
-        return {}
-
-    @property
-    def maxzoom(self):
-        return self._maxzoom
-
-    @property
-    def minzoom(self):
-        return self._minzoom
-
-    @property
-    def name(self):
-        return self._name
-
 
 class OINMetaCatalog(Catalog):
     def __init__(self, uri):
@@ -95,6 +71,7 @@ class OINMetaCatalog(Catalog):
 
     def get_sources(self, bounds, resolution):
         bounds, bounds_crs = bounds
+        zoom = get_zoom(max(resolution))
         left, bottom, right, top = warp.transform_bounds(
             bounds_crs, WGS84_CRS, *bounds)
 
@@ -108,14 +85,6 @@ class OINMetaCatalog(Catalog):
             ]
 
         return []
-
-    @property
-    def bounds(self):
-        return self._bounds
-
-    @property
-    def center(self):
-        return self._center
 
     @property
     def headers(self):
@@ -163,27 +132,3 @@ class OINMetaCatalog(Catalog):
                 'NFKD', self._meta['platform']).encode('ascii', 'ignore')
 
         return headers
-
-    @property
-    def id(self):
-        return self._name
-
-    @property
-    def maxzoom(self):
-        return self._maxzoom
-
-    @property
-    def metadata_url(self):
-        return self._metadata_url
-
-    @property
-    def minzoom(self):
-        return self._minzoom
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def provider(self):
-        return self._provider
