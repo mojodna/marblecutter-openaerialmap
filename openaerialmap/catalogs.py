@@ -78,13 +78,10 @@ class OINMetaCatalog(Catalog):
         if (self._bounds[0] <= left <= self._bounds[2]
                 or self._bounds[0] <= right <= self._bounds[2]) and (
                     self._bounds[1] <= bottom <= self._bounds[3]
-                    or self._bounds[1] <= top <= self._bounds[3]):
-            return [
-                Source(self._source, self._name, self._resolution, {}, {},
-                       {"imagery": True})
-            ]
-
-        return []
+                    or self._bounds[1] <= top <= self._bounds[3]) and (
+                        self._minzoom <= zoom <= self._maxzoom):
+            yield Source(self._source, self._name, self._resolution, {}, {},
+                         {"imagery": True})
 
     @property
     def headers(self):
