@@ -1,7 +1,9 @@
 # coding=utf-8
 
 import math
+import multiprocessing
 import unicodedata
+from concurrent import futures
 from itertools import chain
 
 import requests
@@ -24,14 +26,17 @@ class OAMSceneCatalog(Catalog):
         self._minzoom = scene['minzoom']
         self._name = scene['name']
 
-        self._sources = [
-            OINMetaCatalog(
+        def _build_catalog(source):
+            return OINMetaCatalog(
                 source['meta']['source'].replace('_warped.vrt', '_meta.json'))
-            for source in reversed(scene['meta']['sources'])
-        ]
+
+        sources = list(reversed(scene['meta']['sources']))
+        with futures.ThreadPoolExecutor(
+                max_workers=multiprocessing.cpu_count() * 5) as executor:
+            self._sources = list(executor.map(_build_catalog, sources))
 
     def get_sources(self, (bounds, bounds_crs), resolution):
-        return chain(*[
+        return chain(* [
             s.get_sources((bounds, bounds_crs), resolution)
             for s in self._sources
         ])
