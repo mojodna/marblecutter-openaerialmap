@@ -10,6 +10,7 @@ import arrow
 from marblecutter import (Bounds, NoDataAvailable, get_resolution_in_meters,
                           get_source, get_zoom)
 from marblecutter.catalogs import WGS84_CRS, Catalog
+from marblecutter.utils import Source
 from rasterio import warp
 
 
@@ -96,7 +97,10 @@ class OINMetaCatalog(Catalog):
                 or self._bounds[0] <= right <= self._bounds[2]) and (
                     self._bounds[1] <= bottom <= self._bounds[3]
                     or self._bounds[1] <= top <= self._bounds[3]):
-            return [(self._source, self._name, self._resolution)]
+            return [
+                Source(self._source, self._name, self._resolution, {}, {},
+                       {"imagery": True})
+            ]
 
         return []
 
