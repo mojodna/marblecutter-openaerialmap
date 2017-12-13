@@ -7,6 +7,7 @@ import os
 from cachetools.func import lru_cache
 from flask import jsonify, render_template, request, url_for
 from marblecutter import NoDataAvailable, tiling
+from marblecutter.catalogs.remote import RemoteCatalog
 from marblecutter.formats.png import PNG
 from marblecutter.transformations import Image
 from marblecutter.web import app
@@ -19,6 +20,8 @@ LOG = logging.getLogger(__name__)
 IMAGE_TRANSFORMATION = Image()
 PNG_FORMAT = PNG()
 
+REMOTE_CATALOG_BASE_URL = os.getenv("REMOTE_CATALOG_BASE_URL",
+                                    "https://api.openaerialmap.org")
 S3_BUCKET = os.getenv("S3_BUCKET")
 S3_ENDPOINT = os.getenv("AWS_S3_ENDPOINT", "s3.amazonaws.com")
 S3_PREFIX = os.getenv("S3_PREFIX", "")
@@ -46,6 +49,14 @@ def make_catalog(scene_id, scene_idx, image_id=None):
             S3_ENDPOINT, S3_BUCKET, S3_PREFIX, scene_id, scene_idx))
     except Exception:
         raise NoDataAvailable()
+
+
+@lru_cache()
+def make_remote_catalog(id):
+    return RemoteCatalog("{}/meta/{}/tilejson.json".format(
+        REMOTE_CATALOG_BASE_URL, id),
+                         "{}/meta/{}/{{z}}/{{x}}/{{y}}.json".format(
+                             REMOTE_CATALOG_BASE_URL, id))
 
 
 def make_prefix():
@@ -86,6 +97,39 @@ def meta(id, scene_idx, image_id=None, prefix=None):
                     id=id,
                     scene_idx=scene_idx,
                     image_id=image_id,
+                    prefix=make_prefix(),
+                    _external=True,
+                    _scheme=""))
+        ]
+
+    return jsonify(meta)
+
+
+@app.route('/o/<path:id>/')
+@app.route('/<prefix>/o/<path:id>/')
+def remote_meta(id, prefix=None):
+    # prefix is for URL generation only (API Gateway stages); if it matched the
+    # URL, it's part of the id
+    if prefix is not None:
+        id = "/".join([prefix, id])
+
+    catalog = make_remote_catalog(id)
+
+    meta = {
+        "bounds": catalog.bounds,
+        "center": catalog.center,
+        "maxzoom": catalog.maxzoom,
+        "minzoom": catalog.minzoom,
+        "name": catalog.name,
+        "tilejson": "2.1.0",
+    }
+
+    with app.app_context():
+        meta["tiles"] = [
+            "{}{{z}}/{{x}}/{{y}}.png".format(
+                url_for(
+                    "remote_meta",
+                    id=id,
                     prefix=make_prefix(),
                     _external=True,
                     _scheme=""))
@@ -166,6 +210,30 @@ def preview(id, scene_idx, image_id=None, prefix=None):
                 }
 
 
+@app.route('/o/<path:id>/preview')
+@app.route('/<prefix>/o/<path:id>/preview')
+def remote_preview(id, prefix=None):
+    # prefix is for URL generation only (API Gateway stages); if it matched the
+    # URL, it's part of the id
+    if prefix is not None:
+        id = "/".join([prefix, id])
+
+    # load the catalog so it will fail if the source doesn't exist
+    make_remote_catalog(id)
+
+    with app.app_context():
+        return render_template(
+            "preview.html",
+            tilejson_url=url_for(
+                "remote_meta",
+                id=id,
+                prefix=make_prefix(),
+                _external=True,
+                _scheme="")), 200, {
+                    "Content-Type": "text/html"
+                }
+
+
 @app.route('/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
 @app.route(
     '/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
@@ -190,6 +258,31 @@ def render_png(id, scene_idx, z, x, y, image_id=None, scale=1, prefix=None):
         id = "/".join([prefix, id])
 
     catalog = make_catalog(id, scene_idx, image_id)
+    tile = Tile(x, y, z)
+
+    headers, data = tiling.render_tile(
+        tile,
+        catalog,
+        format=PNG_FORMAT,
+        transformation=IMAGE_TRANSFORMATION,
+        scale=scale)
+
+    headers.update(catalog.headers)
+
+    return data, 200, headers
+
+
+@app.route('/o/<path:id>/<int:z>/<int:x>/<int:y>.png')
+@app.route('/o/<path:id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
+@app.route('/<prefix>/o/<path:id>/<int:z>/<int:x>/<int:y>.png')
+@app.route('/<prefix>/o/<path:id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
+def render_png_from_remote(id, z, x, y, scale=1, prefix=None):
+    # prefix is for URL generation only (API Gateway stages); if it matched the
+    # URL, it's part of the id
+    if prefix is not None:
+        id = "/".join([prefix, id])
+
+    catalog = make_remote_catalog(id)
     tile = Tile(x, y, z)
 
     headers, data = tiling.render_tile(
