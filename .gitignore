@@ -14,3 +14,4 @@ marblecutter.egg-info/
 staging.env
 production.env
 out.zip
+package-lock.json
