@@ -1,5 +1,6 @@
 arrow ~= 0.10.0
 cachetools ~= 2.0.0
+futures
 # marblecutter[color_ramp,postgis,web] ~= 0.3.1
 https://github.com/mojodna/marblecutter/archive/4dcedb2.tar.gz#egg=marblecutter[web]
 # rasterio[s3] >= 1.0a10 --no-binary rasterio

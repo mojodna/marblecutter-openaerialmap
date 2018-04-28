@@ -57,6 +57,8 @@
 .pypath/click/termui.pyc
 .pypath/click/types.pyc
 .pypath/click/utils.pyc
+.pypath/concurrent/*.pyc
+.pypath/concurrent/futures/*.pyc
 .pypath/cycler.pyc
 .pypath/dateutil/*
 .pypath/enum/__init__.pyc

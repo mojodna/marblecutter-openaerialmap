@@ -11,3 +11,4 @@ task/
 !.pypath/
 !.pypath/*/.libs/
 .pypath/*.py
+.pypath/concurrent/
