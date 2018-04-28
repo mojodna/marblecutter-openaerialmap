@@ -117,7 +117,7 @@ def meta(id, scene_idx, image_id=None, prefix=None):
 
 @app.route("/user/<path:id>/")
 @app.route("/<prefix>/user/<path:id>/")
-def remote_meta(id, prefix=None):
+def user_meta(id, prefix=None):
     catalog = make_remote_catalog("user", id)
 
     meta = {
@@ -133,11 +133,7 @@ def remote_meta(id, prefix=None):
         meta["tiles"] = [
             "{}{{z}}/{{x}}/{{y}}.png".format(
                 url_for(
-                    "remote_meta",
-                    id=id,
-                    prefix=make_prefix(),
-                    _external=True,
-                    _scheme="",
+                    "user_meta", id=id, prefix=make_prefix(), _external=True, _scheme=""
                 )
             )
         ]
@@ -223,7 +219,7 @@ def preview(id, scene_idx, image_id=None, prefix=None):
 
 @app.route("/user/<path:id>/preview")
 @app.route("/<prefix>/user/<path:id>/preview")
-def remote_preview(id, prefix=None):
+def user_preview(id, prefix=None):
     # load the catalog so it will fail if the source doesn't exist
     make_remote_catalog("user", id)
 
@@ -231,7 +227,7 @@ def remote_preview(id, prefix=None):
         return render_template(
             "preview.html",
             tilejson_url=url_for(
-                "remote_meta", id=id, prefix=make_prefix(), _external=True, _scheme=""
+                "user_meta", id=id, prefix=make_prefix(), _external=True, _scheme=""
             ),
         ), 200, {
             "Content-Type": "text/html"
