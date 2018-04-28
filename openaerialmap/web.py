@@ -59,10 +59,13 @@ def make_catalog(scene_id, scene_idx, image_id=None):
 
 @lru_cache()
 def make_remote_catalog(type, id):
-    return RemoteCatalog(
-        "{}/{}/{}/catalog.json".format(REMOTE_CATALOG_BASE_URL, type, id),
-        "{}/{}/{}/{{z}}/{{x}}/{{y}}.json".format(REMOTE_CATALOG_BASE_URL, type, id),
-    )
+    try:
+        return RemoteCatalog(
+            "{}/{}/{}/catalog.json".format(REMOTE_CATALOG_BASE_URL, type, id),
+            "{}/{}/{}/{{z}}/{{x}}/{{y}}.json".format(REMOTE_CATALOG_BASE_URL, type, id),
+        )
+    except Exception:
+        raise NoDataAvailable()
 
 
 def make_prefix():
