@@ -33,7 +33,7 @@ WORKDIR /opt/marblecutter
 COPY requirements-server.txt /opt/marblecutter/
 COPY requirements.txt /opt/marblecutter/
 
-RUN pip install -U pip numpy && \
+RUN pip install -U numpy && \
   pip install -r requirements-server.txt && \
   rm -rf /root/.cache
 
