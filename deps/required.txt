@@ -363,6 +363,10 @@
 .pypath/rasterio/vrt.pyc
 .pypath/rasterio/warp.pyc
 .pypath/rasterio/windows.pyc
+.pypath/rio_pansharpen/*.pyc
+.pypath/rio_tiler/*.pyc
+.pypath/rio_toa/*.pyc
+.pypath/riomucho/*.pyc
 .pypath/requests/*
 .pypath/scipy/__config__.pyc
 .pypath/scipy/__init__.pyc
