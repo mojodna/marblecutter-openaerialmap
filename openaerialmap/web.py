@@ -187,6 +187,38 @@ def wmts(id, scene_idx, image_id=None, prefix=None):
         }
 
 
+@app.route("/user/<path:id>/wmts")
+@app.route("/<prefix>/user/<path:id>/wmts")
+def user_wmts(id, prefix=None):
+    catalog = make_remote_catalog("user", id)
+
+    provider = "OpenAerialMap"
+    provider_url = "https://openaerialmap.org/"
+
+    if catalog.provider:
+        provider = "{} ({})".format(provider, catalog.provider)
+
+    with app.app_context():
+        base_url = url_for("user_meta", id=id, prefix=make_prefix(), _external=True)
+
+        return render_template(
+            "wmts.xml",
+            base_url=base_url,
+            bounds=catalog.bounds,
+            content_type="image/png",
+            ext="png",
+            id=catalog.id,
+            maxzoom=catalog.maxzoom,
+            metadata_url=catalog.metadata_url,
+            minzoom=catalog.minzoom,
+            provider=provider,
+            provider_url=provider_url,
+            title=catalog.name,
+        ), 200, {
+            "Content-Type": "application/xml"
+        }
+
+
 @app.route("/<path:id>/<int:scene_idx>/preview")
 @app.route("/<path:id>/<int:scene_idx>/<image_id>/preview")
 @app.route("/<prefix>/<path:id>/<int:scene_idx>/preview")
