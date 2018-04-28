@@ -112,6 +112,7 @@
 .pypath/marblecutter/*
 .pypath/markupsafe/__init__.pyc
 .pypath/markupsafe/_compat.pyc
+.pypath/markupsafe/_native.pyc
 .pypath/markupsafe/_speedups.so
 .pypath/matplotlib/.libs/libpng16-*
 .pypath/matplotlib/.libs/libz-*
