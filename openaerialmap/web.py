@@ -20,8 +20,9 @@ LOG = logging.getLogger(__name__)
 IMAGE_TRANSFORMATION = Image()
 PNG_FORMAT = PNG()
 
-REMOTE_CATALOG_BASE_URL = os.getenv("REMOTE_CATALOG_BASE_URL",
-                                    "https://api.openaerialmap.org")
+REMOTE_CATALOG_BASE_URL = os.getenv(
+    "REMOTE_CATALOG_BASE_URL", "https://api.openaerialmap.org"
+)
 S3_BUCKET = os.getenv("S3_BUCKET")
 S3_ENDPOINT = os.getenv("AWS_S3_ENDPOINT", "s3.amazonaws.com")
 S3_PREFIX = os.getenv("S3_PREFIX", "")
@@ -41,37 +42,41 @@ if S3_PREFIX.startswith("/"):
 def make_catalog(scene_id, scene_idx, image_id=None):
     try:
         if image_id:
-            return OINMetaCatalog("https://{}/{}/{}{}/{}/{}_meta.json".format(
-                S3_ENDPOINT, S3_BUCKET, S3_PREFIX, scene_id, scene_idx,
-                image_id))
+            return OINMetaCatalog(
+                "https://{}/{}/{}{}/{}/{}_meta.json".format(
+                    S3_ENDPOINT, S3_BUCKET, S3_PREFIX, scene_id, scene_idx, image_id
+                )
+            )
 
-        return OAMSceneCatalog("https://{}/{}{}/{}/{}/scene.json".format(
-            S3_ENDPOINT, S3_BUCKET, S3_PREFIX, scene_id, scene_idx))
+        return OAMSceneCatalog(
+            "https://{}/{}{}/{}/{}/scene.json".format(
+                S3_ENDPOINT, S3_BUCKET, S3_PREFIX, scene_id, scene_idx
+            )
+        )
     except Exception:
         raise NoDataAvailable()
 
 
 @lru_cache()
-def make_remote_catalog(id):
-    return RemoteCatalog("{}/meta/{}/tilejson.json".format(
-        REMOTE_CATALOG_BASE_URL, id),
-                         "{}/meta/{}/{{z}}/{{x}}/{{y}}.json".format(
-                             REMOTE_CATALOG_BASE_URL, id))
+def make_remote_catalog(type, id):
+    return RemoteCatalog(
+        "{}/{}/{}/catalog.json".format(REMOTE_CATALOG_BASE_URL, type, id),
+        "{}/{}/{}/{{z}}/{{x}}/{{y}}.json".format(REMOTE_CATALOG_BASE_URL, type, id),
+    )
 
 
 def make_prefix():
-    host = request.headers.get("X-Forwarded-Host",
-                               request.headers.get("Host", ""))
+    host = request.headers.get("X-Forwarded-Host", request.headers.get("Host", ""))
 
     # sniff for API Gateway
     if ".execute-api." in host and ".amazonaws.com" in host:
         return request.headers.get("X-Stage")
 
 
-@app.route('/<path:id>/<int:scene_idx>/')
-@app.route('/<path:id>/<int:scene_idx>/<image_id>/')
-@app.route('/<prefix>/<path:id>/<int:scene_idx>/')
-@app.route('/<prefix>/<path:id>/<int:scene_idx>/<image_id>/')
+@app.route("/<path:id>/<int:scene_idx>/")
+@app.route("/<path:id>/<int:scene_idx>/<image_id>/")
+@app.route("/<prefix>/<path:id>/<int:scene_idx>/")
+@app.route("/<prefix>/<path:id>/<int:scene_idx>/<image_id>/")
 def meta(id, scene_idx, image_id=None, prefix=None):
     # prefix is for URL generation only (API Gateway stages); if it matched the
     # URL, it's part of the id
@@ -99,14 +104,16 @@ def meta(id, scene_idx, image_id=None, prefix=None):
                     image_id=image_id,
                     prefix=make_prefix(),
                     _external=True,
-                    _scheme=""))
+                    _scheme="",
+                )
+            )
         ]
 
     return jsonify(meta)
 
 
-@app.route('/o/<path:id>/')
-@app.route('/<prefix>/o/<path:id>/')
+@app.route("/o/<path:id>/")
+@app.route("/<prefix>/o/<path:id>/")
 def remote_meta(id, prefix=None):
     # prefix is for URL generation only (API Gateway stages); if it matched the
     # URL, it's part of the id
@@ -132,16 +139,18 @@ def remote_meta(id, prefix=None):
                     id=id,
                     prefix=make_prefix(),
                     _external=True,
-                    _scheme=""))
+                    _scheme="",
+                )
+            )
         ]
 
     return jsonify(meta)
 
 
-@app.route('/<path:id>/<int:scene_idx>/wmts')
-@app.route('/<path:id>/<int:scene_idx>/<image_id>/wmts')
-@app.route('/<prefix>/<path:id>/<int:scene_idx>/wmts')
-@app.route('/<prefix>/<path:id>/<int:scene_idx>/<image_id>/wmts')
+@app.route("/<path:id>/<int:scene_idx>/wmts")
+@app.route("/<path:id>/<int:scene_idx>/<image_id>/wmts")
+@app.route("/<prefix>/<path:id>/<int:scene_idx>/wmts")
+@app.route("/<prefix>/<path:id>/<int:scene_idx>/<image_id>/wmts")
 def wmts(id, scene_idx, image_id=None, prefix=None):
     # prefix is for URL generation only (API Gateway stages); if it matched the
     # URL, it's part of the id
@@ -163,10 +172,11 @@ def wmts(id, scene_idx, image_id=None, prefix=None):
             scene_idx=scene_idx,
             image_id=image_id,
             prefix=make_prefix(),
-            _external=True)
+            _external=True,
+        )
 
         return render_template(
-            'wmts.xml',
+            "wmts.xml",
             base_url=base_url,
             bounds=catalog.bounds,
             content_type="image/png",
@@ -177,15 +187,16 @@ def wmts(id, scene_idx, image_id=None, prefix=None):
             minzoom=catalog.minzoom,
             provider=provider,
             provider_url=provider_url,
-            title=catalog.name), 200, {
-                'Content-Type': 'application/xml'
-            }
+            title=catalog.name,
+        ), 200, {
+            "Content-Type": "application/xml"
+        }
 
 
-@app.route('/<path:id>/<int:scene_idx>/preview')
-@app.route('/<path:id>/<int:scene_idx>/<image_id>/preview')
-@app.route('/<prefix>/<path:id>/<int:scene_idx>/preview')
-@app.route('/<prefix>/<path:id>/<int:scene_idx>/<image_id>/preview')
+@app.route("/<path:id>/<int:scene_idx>/preview")
+@app.route("/<path:id>/<int:scene_idx>/<image_id>/preview")
+@app.route("/<prefix>/<path:id>/<int:scene_idx>/preview")
+@app.route("/<prefix>/<path:id>/<int:scene_idx>/<image_id>/preview")
 def preview(id, scene_idx, image_id=None, prefix=None):
     # prefix is for URL generation only (API Gateway stages); if it matched the
     # URL, it's part of the id
@@ -205,13 +216,15 @@ def preview(id, scene_idx, image_id=None, prefix=None):
                 image_id=image_id,
                 prefix=make_prefix(),
                 _external=True,
-                _scheme="")), 200, {
-                    "Content-Type": "text/html"
-                }
+                _scheme="",
+            ),
+        ), 200, {
+            "Content-Type": "text/html"
+        }
 
 
-@app.route('/o/<path:id>/preview')
-@app.route('/<prefix>/o/<path:id>/preview')
+@app.route("/o/<path:id>/preview")
+@app.route("/<prefix>/o/<path:id>/preview")
 def remote_preview(id, prefix=None):
     # prefix is for URL generation only (API Gateway stages); if it matched the
     # URL, it's part of the id
@@ -225,31 +238,26 @@ def remote_preview(id, prefix=None):
         return render_template(
             "preview.html",
             tilejson_url=url_for(
-                "remote_meta",
-                id=id,
-                prefix=make_prefix(),
-                _external=True,
-                _scheme="")), 200, {
-                    "Content-Type": "text/html"
-                }
+                "remote_meta", id=id, prefix=make_prefix(), _external=True, _scheme=""
+            ),
+        ), 200, {
+            "Content-Type": "text/html"
+        }
 
 
-@app.route('/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
+@app.route("/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png")
+@app.route("/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
+@app.route("/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png")
 @app.route(
-    '/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
-@app.route('/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
+    "/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png"
+)
+@app.route("/<prefix>/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png")
+@app.route("/<prefix>/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png")
 @app.route(
-    '/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
+    "/<prefix>/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png"
 )
 @app.route(
-    '/<prefix>/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png'
-)
-@app.route('/<prefix>/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
-@app.route(
-    '/<prefix>/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
-)
-@app.route(
-    '/<prefix>/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
+    "/<prefix>/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png"
 )
 def render_png(id, scene_idx, z, x, y, image_id=None, scale=1, prefix=None):
     # prefix is for URL generation only (API Gateway stages); if it matched the
@@ -265,17 +273,18 @@ def render_png(id, scene_idx, z, x, y, image_id=None, scale=1, prefix=None):
         catalog,
         format=PNG_FORMAT,
         transformation=IMAGE_TRANSFORMATION,
-        scale=scale)
+        scale=scale,
+    )
 
     headers.update(catalog.headers)
 
     return data, 200, headers
 
 
-@app.route('/o/<path:id>/<int:z>/<int:x>/<int:y>.png')
-@app.route('/o/<path:id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
-@app.route('/<prefix>/o/<path:id>/<int:z>/<int:x>/<int:y>.png')
-@app.route('/<prefix>/o/<path:id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
+@app.route("/o/<path:id>/<int:z>/<int:x>/<int:y>.png")
+@app.route("/o/<path:id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
+@app.route("/<prefix>/o/<path:id>/<int:z>/<int:x>/<int:y>.png")
+@app.route("/<prefix>/o/<path:id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
 def render_png_from_remote(id, z, x, y, scale=1, prefix=None):
     # prefix is for URL generation only (API Gateway stages); if it matched the
     # URL, it's part of the id
@@ -290,7 +299,8 @@ def render_png_from_remote(id, z, x, y, scale=1, prefix=None):
         catalog,
         format=PNG_FORMAT,
         transformation=IMAGE_TRANSFORMATION,
-        scale=scale)
+        scale=scale,
+    )
 
     headers.update(catalog.headers)
 
