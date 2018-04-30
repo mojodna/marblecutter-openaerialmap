@@ -6,7 +6,7 @@ import os
 
 from cachetools.func import lru_cache
 from flask import jsonify, render_template, request, url_for
-from marblecutter import NoDataAvailable, tiling
+from marblecutter import NoCatalogAvailable, tiling
 from marblecutter.catalogs.remote import RemoteCatalog
 from marblecutter.formats.png import PNG
 from marblecutter.transformations import Image
@@ -54,7 +54,7 @@ def make_catalog(scene_id, scene_idx, image_id=None):
             )
         )
     except Exception:
-        raise NoDataAvailable()
+        raise NoCatalogAvailable()
 
 
 @lru_cache()
@@ -65,7 +65,7 @@ def make_remote_catalog(type, id):
             "{}/{}/{}/{{z}}/{{x}}/{{y}}.json".format(REMOTE_CATALOG_BASE_URL, type, id),
         )
     except Exception:
-        raise NoDataAvailable()
+        raise NoCatalogAvailable()
 
 
 def make_prefix():
