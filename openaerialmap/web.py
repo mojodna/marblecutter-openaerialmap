@@ -8,6 +8,7 @@ from cachetools.func import lru_cache
 from flask import jsonify, render_template, request, url_for
 from marblecutter import NoCatalogAvailable, tiling
 from marblecutter.catalogs.remote import RemoteCatalog
+from marblecutter.formats.optimal import Optimal
 from marblecutter.formats.png import PNG
 from marblecutter.transformations import Image
 from marblecutter.web import app
@@ -19,6 +20,7 @@ LOG = logging.getLogger(__name__)
 
 IMAGE_TRANSFORMATION = Image()
 PNG_FORMAT = PNG()
+OPTIMAL_FORMAT = Optimal()
 
 REMOTE_CATALOG_BASE_URL = os.getenv(
     "REMOTE_CATALOG_BASE_URL", "https://api.openaerialmap.org"
@@ -99,7 +101,7 @@ def meta(id, scene_idx, image_id=None, prefix=None):
 
     with app.app_context():
         meta["tiles"] = [
-            "{}{{z}}/{{x}}/{{y}}.png".format(
+            "{}{{z}}/{{x}}/{{y}}".format(
                 url_for(
                     "meta",
                     id=id,
@@ -131,7 +133,7 @@ def user_meta(id, prefix=None):
 
     with app.app_context():
         meta["tiles"] = [
-            "{}{{z}}/{{x}}/{{y}}.png".format(
+            "{}{{z}}/{{x}}/{{y}}".format(
                 url_for(
                     "user_meta", id=id, prefix=make_prefix(), _external=True, _scheme=""
                 )
@@ -302,11 +304,43 @@ def render_png(id, scene_idx, z, x, y, image_id=None, scale=1, prefix=None):
     return data, 200, headers
 
 
+@app.route("/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>")
+@app.route("/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x")
+@app.route("/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>")
+@app.route("/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x")
+@app.route("/<prefix>/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>")
+@app.route("/<prefix>/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>")
+@app.route("/<prefix>/<path:id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x")
+@app.route(
+    "/<prefix>/<path:id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x"
+)
+def render(id, scene_idx, z, x, y, image_id=None, scale=1, prefix=None):
+    # prefix is for URL generation only (API Gateway stages); if it matched the
+    # URL, it's part of the id
+    if prefix is not None:
+        id = "/".join([prefix, id])
+
+    catalog = make_catalog(id, scene_idx, image_id)
+    tile = Tile(x, y, z)
+
+    headers, data = tiling.render_tile(
+        tile,
+        catalog,
+        format=OPTIMAL_FORMAT,
+        transformation=IMAGE_TRANSFORMATION,
+        scale=scale,
+    )
+
+    headers.update(catalog.headers)
+
+    return data, 200, headers
+
+
 @app.route("/user/<path:id>/<int:z>/<int:x>/<int:y>.png")
 @app.route("/user/<path:id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
 @app.route("/<prefix>/user/<path:id>/<int:z>/<int:x>/<int:y>.png")
 @app.route("/<prefix>/user/<path:id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
-def render_png_from_remote(id, z, x, y, scale=1, prefix=None):
+def user_render_png(id, z, x, y, scale=1, prefix=None):
     catalog = make_remote_catalog("user", id)
     tile = Tile(x, y, z)
 
@@ -314,6 +348,27 @@ def render_png_from_remote(id, z, x, y, scale=1, prefix=None):
         tile,
         catalog,
         format=PNG_FORMAT,
+        transformation=IMAGE_TRANSFORMATION,
+        scale=scale,
+    )
+
+    headers.update(catalog.headers)
+
+    return data, 200, headers
+
+
+@app.route("/user/<path:id>/<int:z>/<int:x>/<int:y>")
+@app.route("/user/<path:id>/<int:z>/<int:x>/<int:y>@<int:scale>x")
+@app.route("/<prefix>/user/<path:id>/<int:z>/<int:x>/<int:y>")
+@app.route("/<prefix>/user/<path:id>/<int:z>/<int:x>/<int:y>@<int:scale>x")
+def user_render(id, z, x, y, scale=1, prefix=None):
+    catalog = make_remote_catalog("user", id)
+    tile = Tile(x, y, z)
+
+    headers, data = tiling.render_tile(
+        tile,
+        catalog,
+        format=OPTIMAL_FORMAT,
         transformation=IMAGE_TRANSFORMATION,
         scale=scale,
     )
