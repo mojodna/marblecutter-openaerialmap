@@ -1,16 +1,24 @@
 # coding=utf-8
 
+import json
+import logging
 import math
 import multiprocessing
+import os
 import unicodedata
 from concurrent import futures
+from distutils.util import strtobool
 from itertools import chain
 
-import arrow
+import boto3
 import requests
+from boto3.session import Config
+from botocore.utils import fix_s3_host
+
+import arrow
 from marblecutter import (
     Bounds,
-    NoDataAvailable,
+    NoCatalogAvailable,
     get_resolution_in_meters,
     get_source,
     get_zoom,
@@ -19,11 +27,45 @@ from marblecutter.catalogs import WGS84_CRS, Catalog
 from marblecutter.utils import Source
 from rasterio import warp
 
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
+
+LOG = logging.getLogger(__name__)
+
+# GDAL-compatible environment variables
+AWS_S3_ENDPOINT = os.getenv("AWS_S3_ENDPOINT")
+AWS_HTTPS = bool(strtobool(os.getenv("AWS_HTTPS", "YES")))
+AWS_VIRTUAL_HOSTING = bool(strtobool(os.getenv("AWS_VIRTUAL_HOSTING", "YES")))
+
+if AWS_HTTPS and AWS_S3_ENDPOINT is not None:
+    endpoint_url = "https://" + AWS_S3_ENDPOINT
+elif AWS_S3_ENDPOINT is not None:
+    endpoint_url = "http://" + AWS_S3_ENDPOINT
+else:
+    endpoint_url = None
+
+if AWS_VIRTUAL_HOSTING:
+    config = Config(s3={"addressing_style": "virtual"})
+else:
+    # disable virtual hosting (<bucket>.endpoint_url)
+    config = Config(s3={"addressing_style": "path"})
+
+S3 = boto3.client("s3", endpoint_url=endpoint_url, config=config)
+
 
 class OAMSceneCatalog(Catalog):
 
     def __init__(self, uri):
-        scene = requests.get(uri).json()
+        if uri.startswith("s3://"):
+            url = urlparse(uri)
+            obj = S3.get_object(Bucket=url.netloc, Key=url.path[1:])
+            scene = json.loads(obj["Body"].read().decode("utf-8"))
+        elif uri.startswith(("http://", "https://")):
+            scene = requests.get(uri).json()
+        else:
+            raise NoCatalogAvailable()
 
         self._bounds = scene["bounds"]
         self._center = scene["center"]
@@ -49,12 +91,18 @@ class OAMSceneCatalog(Catalog):
 class OINMetaCatalog(Catalog):
 
     def __init__(self, uri):
-        rsp = requests.get(uri)
+        try:
+            if uri.startswith("s3://"):
+                url = urlparse(uri)
+                obj = S3.get_object(Bucket=url.netloc, Key=url.path[1:])
+                oin_meta = json.loads(obj["Body"].read().decode("utf-8"))
+            elif uri.startswith(("http://", "https://")):
+                oin_meta = requests.get(uri).json()
+            else:
+                raise NoCatalogAvailable()
+        except Exception:
+            raise NoCatalogAvailable()
 
-        if not rsp.ok:
-            raise NoDataAvailable()
-
-        oin_meta = rsp.json()
         self._meta = oin_meta
         self._metadata_url = uri
         self._name = oin_meta.get("title")

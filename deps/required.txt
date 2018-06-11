@@ -343,6 +343,7 @@
 .pypath/rio_toa/*.pyc
 .pypath/riomucho/*.pyc
 .pypath/requests/*
+.pypath/s3transfer/*
 .pypath/scipy/__config__.pyc
 .pypath/scipy/__init__.pyc
 .pypath/scipy/_lib/__init__.pyc

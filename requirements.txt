@@ -1,4 +1,5 @@
 arrow ~= 0.10.0
+boto3 ~= 1.7.35
 cachetools ~= 2.0.0
 futures
 # marblecutter[color_ramp,postgis,web] ~= 0.3.1

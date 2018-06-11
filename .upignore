@@ -10,4 +10,6 @@ node_modules/
 task/
 !.pypath/
 !.pypath/*/.libs/
+!.pypath/botocore/data/*.json
+!.pypath/botocore/data/*/*/*.json
 .pypath/*.py
