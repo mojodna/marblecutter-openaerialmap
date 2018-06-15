@@ -13,7 +13,6 @@ from itertools import chain
 import boto3
 import requests
 from boto3.session import Config
-from botocore.utils import fix_s3_host
 
 import arrow
 from marblecutter import (
@@ -116,6 +115,29 @@ class OINMetaCatalog(Catalog):
             )
             approximate_zoom = get_zoom(max(self._resolution), op=math.ceil)
 
+            global_min = src.get_tag_item("TIFFTAG_MINSAMPLEVALUE")
+            global_max = src.get_tag_item("TIFFTAG_MAXSAMPLEVALUE")
+
+            for band in xrange(0, src.count):
+                self._meta["values"] = self._meta.get("values", {})
+                self._meta["values"][band] = {}
+                min_val = src.get_tag_item("STATISTICS_MINIMUM", bidx=band + 1)
+                max_val = src.get_tag_item("STATISTICS_MAXIMUM", bidx=band + 1)
+                mean_val = src.get_tag_item("STATISTICS_MEAN", bidx=band + 1)
+
+                if min_val is not None:
+                    self._meta["values"][band]["min"] = float(min_val)
+                elif global_min is not None:
+                    self._meta["values"][band]["min"] = float(global_min)
+
+                if max_val is not None:
+                    self._meta["values"][band]["max"] = float(max_val)
+                elif global_max is not None:
+                    self._meta["values"][band]["max"] = float(global_max)
+
+                if mean_val is not None:
+                    self._meta["values"][band]["mean"] = float(mean_val)
+
         self._center = [
             (self._bounds[0] + self.bounds[2]) / 2,
             (self._bounds[1] + self.bounds[3]) / 2,
@@ -141,7 +163,12 @@ class OINMetaCatalog(Catalog):
             and (self._minzoom <= zoom <= self._maxzoom)
         ):
             yield Source(
-                self._source, self._name, self._resolution, {}, {}, {"imagery": True}
+                self._source,
+                self._name,
+                self._resolution,
+                {},
+                self._meta,
+                {"imagery": True},
             )
 
     @property
