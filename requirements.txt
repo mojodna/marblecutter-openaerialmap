@@ -3,6 +3,7 @@ boto3 ~= 1.7.35
 cachetools ~= 2.0.0
 futures
 # marblecutter[color_ramp,postgis,web] ~= 0.3.1
-https://github.com/mojodna/marblecutter/archive/70c2cfc.tar.gz#egg=marblecutter[web]
-rasterio[s3] >= 1.0b1 --no-binary rasterio
+https://github.com/mojodna/marblecutter/archive/1570306.tar.gz#egg=marblecutter[web]
+# https://github.com/mapbox/rasterio/archive/b5ff28a.tar.gz#egg=rasterio[s3] --no-binary rasterio
+rasterio[s3] >= 1.0rc2 --no-binary rasterio
 requests ~= 2.18.3
