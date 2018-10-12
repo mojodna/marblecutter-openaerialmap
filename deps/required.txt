@@ -42,6 +42,7 @@
 .pypath/attr/validators.pyc
 .pypath/boto3/*
 .pypath/botocore/*
+.pypath/builtins/*
 .pypath/cachetools/*
 .pypath/certifi/*
 .pypath/chardet/*
@@ -86,6 +87,7 @@
 .pypath/functools32/__init__.pyc
 .pypath/functools32/functools32.pyc
 .pypath/functools32/reprlib32.pyc
+.pypath/future/*
 .pypath/haversine/__init__.pyc
 .pypath/idna/*
 .pypath/itsdangerous.pyc
@@ -312,6 +314,7 @@
 .pypath/numpy/testing/nosetester.pyc
 .pypath/numpy/testing/utils.pyc
 .pypath/numpy/version.pyc
+.pypath/past/*
 .pypath/psycopg2/.libs/libcom_err-*
 .pypath/psycopg2/.libs/libcrypto-*
 .pypath/psycopg2/.libs/libgssapi_krb5-*
